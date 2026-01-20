@@ -1,13 +1,36 @@
 services:
   postgres:
-    image: 'postgres:latest'
+    image: 'postgres:16-alpine'
+    container_name: shortener_db
     environment:
-      - 'POSTGRES_DB=mydatabase'
+      - 'POSTGRES_DB=shortener_db'
       - 'POSTGRES_PASSWORD=secret'
-      - 'POSTGRES_USER=myuser'
+      - 'POSTGRES_USER=berke'
     ports:
-      - '5432'
+      - '5432:5432'
+    volumes:
+      - 'postgres_data:/var/lib/postgresql/data'
+    networks:
+      - shortener-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U berke -d shortener_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   redis:
-    image: 'redis:latest'
+    image: 'redis:alpine'
+    container_name: shortener_redis
     ports:
-      - '6379'
+      - '6379:6379'
+    networks:
+      - shortener-network
+    restart: unless-stopped
+
+networks:
+  shortener-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
