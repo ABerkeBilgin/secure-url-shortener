@@ -1,6 +1,7 @@
 package com.berke.urlshortener.service;
 
 import com.berke.urlshortener.entity.ShortUrl;
+import com.berke.urlshortener.exception.ShortUrlNotFoundException;
 import com.berke.urlshortener.repository.ShortUrlRepository;
 import com.berke.urlshortener.strategy.ShorteningStrategy;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +32,6 @@ public class ShortUrlService {
 
     public ShortUrl getOriginalUrl(String shortCode) {
         return repository.findByShortCode(shortCode)
-                .orElseThrow(() -> new RuntimeException("URL not found: " + shortCode));
+                .orElseThrow(() -> new ShortUrlNotFoundException("Code not found: " + shortCode));
     }
 }
