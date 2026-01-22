@@ -3,6 +3,8 @@ package com.berke.urlshortener.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @Entity
@@ -12,7 +14,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ShortUrl {
+public class ShortUrl implements Serializable{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
