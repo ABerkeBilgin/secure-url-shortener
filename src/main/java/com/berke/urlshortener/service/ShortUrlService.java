@@ -10,6 +10,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
 
 @Slf4j
 @Service
@@ -28,6 +29,7 @@ public class ShortUrlService {
         // 1. [DB] Save initial
         ShortUrl shortUrl = ShortUrl.builder()
                 .originalUrl(originalUrl)
+                .expiresAt(LocalDateTime.now().plusDays(30)) 
                 .build();
         ShortUrl savedUrl = repository.save(shortUrl);
 
@@ -42,7 +44,6 @@ public class ShortUrlService {
         String cacheKey = "shortUrl:" + shortCode;
         redisTemplate.opsForValue().set(cacheKey, finalUrl, CACHE_TTL);
         
-        
         log.info("ShortUrl created successfully. ShortCode: {}, OriginalUrl: {}", shortCode, originalUrl);
         return finalUrl;
     }
@@ -55,6 +56,10 @@ public class ShortUrlService {
         
         if (cachedUrl != null) {
             log.info("Cache Hit for ShortCode: {}", shortCode);
+             if (cachedUrl.getExpiresAt() != null && cachedUrl.getExpiresAt().isBefore(LocalDateTime.now())) {
+                redisTemplate.delete(cacheKey);
+                throw new ShortUrlNotFoundException("Link expired (Cache)");
+            }
             return cachedUrl;
         }
 
@@ -67,11 +72,14 @@ public class ShortUrlService {
                     return new ShortUrlNotFoundException("Code not found: " + shortCode);
                 });
 
-        // 3. [REDIS] Update Cache
-        if (dbUrl.getExpiresAt() == null || dbUrl.getExpiresAt().isAfter(java.time.LocalDateTime.now())) {
-             redisTemplate.opsForValue().set(cacheKey, dbUrl, CACHE_TTL);
-             log.info("Cache updated for ShortCode: {}", shortCode);
+        if (dbUrl.getExpiresAt() != null && dbUrl.getExpiresAt().isBefore(LocalDateTime.now())) {
+            log.warn("Link found but expired: {}", shortCode);
+            throw new ShortUrlNotFoundException("Link expired");
         }
+
+        // 3. [REDIS] Update Cache
+        redisTemplate.opsForValue().set(cacheKey, dbUrl, CACHE_TTL);
+        log.info("Cache updated for ShortCode: {}", shortCode);
 
         return dbUrl;
     }
