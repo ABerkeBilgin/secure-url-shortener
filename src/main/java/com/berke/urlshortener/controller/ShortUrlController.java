@@ -4,6 +4,8 @@ import com.berke.urlshortener.dto.CreateShortUrlRequest;
 import com.berke.urlshortener.dto.ShortUrlResponse;
 import com.berke.urlshortener.entity.ShortUrl;
 import com.berke.urlshortener.service.ShortUrlService;
+
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -18,7 +20,7 @@ public class ShortUrlController {
     private final ShortUrlService service;
 
     @PostMapping("/api/v1/urls")
-    public ResponseEntity<ShortUrlResponse> createShortUrl(@RequestBody CreateShortUrlRequest request) {
+    public ResponseEntity<ShortUrlResponse> createShortUrl(@Valid @RequestBody CreateShortUrlRequest request) {
 
         ShortUrl createdUrl = service.createShortUrl(request.getOriginalUrl());
         ShortUrlResponse response = ShortUrlResponse.builder()
