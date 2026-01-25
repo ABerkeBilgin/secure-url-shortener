@@ -6,6 +6,8 @@ import com.berke.urlshortener.repository.ShortUrlRepository;
 import com.berke.urlshortener.strategy.ShorteningStrategy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -23,13 +25,31 @@ public class ShortUrlService {
 
     private static final Duration CACHE_TTL = Duration.ofMinutes(10);
 
-    public ShortUrl createShortUrl(String originalUrl) {
+    @Value("${app.shortener.default-expiration-days}")
+    private int defaultExpirationDays;
+
+    @Value("${app.shortener.max-expiration-days}")
+    private int maxExpirationDays;
+
+
+    public ShortUrl createShortUrl(String originalUrl, LocalDateTime userExpirationDate) {
         log.info("Generating ShortUrl for: {}", originalUrl);
 
+        LocalDateTime expiresAt = (userExpirationDate != null)
+            ? userExpirationDate
+            : LocalDateTime.now().plusDays(defaultExpirationDays);
+        
+        
+       LocalDateTime maxAllowedDate = LocalDateTime.now().plusDays(maxExpirationDays);
+
+       if (expiresAt.isAfter(maxAllowedDate)) {
+            log.info("User requested date {} exceeds limit. Capping to {} days.", expiresAt, maxExpirationDays);
+            expiresAt = maxAllowedDate;
+        }
         // 1. [DB] Save initial
         ShortUrl shortUrl = ShortUrl.builder()
                 .originalUrl(originalUrl)
-                .expiresAt(LocalDateTime.now().plusDays(30)) 
+                .expiresAt(expiresAt) 
                 .build();
         ShortUrl savedUrl = repository.save(shortUrl);
 

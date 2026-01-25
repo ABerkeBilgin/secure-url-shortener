@@ -15,4 +15,5 @@ public class ShortUrlResponse {
     private String shortCode;
     private String originalUrl;
     private LocalDateTime createdDate;
+    private LocalDateTime expirationData;
 }

@@ -22,11 +22,12 @@ public class ShortUrlController {
     @PostMapping("/api/v1/urls")
     public ResponseEntity<ShortUrlResponse> createShortUrl(@Valid @RequestBody CreateShortUrlRequest request) {
 
-        ShortUrl createdUrl = service.createShortUrl(request.getOriginalUrl());
+        ShortUrl createdUrl = service.createShortUrl(request.getOriginalUrl(), request.getExpirationDate());
         ShortUrlResponse response = ShortUrlResponse.builder()
                 .shortCode(createdUrl.getShortCode())
                 .originalUrl(createdUrl.getOriginalUrl())
                 .createdDate(createdUrl.getCreatedAt())
+                .expirationData(createdUrl.getExpiresAt())
                 .build();
 
         return new ResponseEntity<>(response, HttpStatus.CREATED);
