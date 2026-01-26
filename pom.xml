@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.berke</groupId>
 	<artifactId>secure-url-shortener</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.3.0</version>
 	<name>secure-url-shortener</name>
 	<description>High-performance URL Shortener</description>
 	<url/>
