@@ -1,6 +1,7 @@
 package com.berke.urlshortener.service;
 
 import com.berke.urlshortener.dto.AnalyticsResponse;
+import com.berke.urlshortener.dto.StatProjection;
 import com.berke.urlshortener.entity.ClickEvent;
 import com.berke.urlshortener.entity.ShortUrl;
 import com.berke.urlshortener.exception.ShortUrlNotFoundException;
@@ -47,8 +48,10 @@ public class AnalyticsService {
                 .build();
 
         clickEventRepository.save(clickEvent);
+
+        shortUrlRepository.incrementVisitCount(shortUrl.getId());
         
-        log.info("Analytics saved: Code={}, OS={}, Browser={}", shortCode, os, browser);
+        log.info("Analytics saved & Counter incremented: Code={}", shortCode);
     }
 
     public AnalyticsResponse getAnalytics(String shortCode) {
@@ -56,26 +59,28 @@ public class AnalyticsService {
         ShortUrl shortUrl = shortUrlRepository.findByShortCode(shortCode)
                 .orElseThrow(() -> new ShortUrlNotFoundException("Short URL not found: " + shortCode));
 
-        
-        List<ClickEvent> clicks = clickEventRepository.findByShortUrlId(shortUrl.getId());
+        Long shortUrlId = shortUrl.getId();
 
-        Map<String, Long> browserStats = clicks.stream()
-                .collect(Collectors.groupingBy(ClickEvent::getBrowser, Collectors.counting()));
+        Map<String, Long> browserStats = clickEventRepository.countBrowsersByShortUrlId(shortUrlId)
+                .stream()
+                .collect(Collectors.toMap(StatProjection::getKey, StatProjection::getCount));
 
-        Map<String, Long> osStats = clicks.stream()
-                .collect(Collectors.groupingBy(ClickEvent::getOs, Collectors.counting()));
+        Map<String, Long> osStats = clickEventRepository.countOsByShortUrlId(shortUrlId)
+                .stream()
+                .collect(Collectors.toMap(StatProjection::getKey, StatProjection::getCount));
 
-        List<String> last5Clicks = clicks.stream()
-                .sorted((a, b) -> b.getClickedAt().compareTo(a.getClickedAt())) 
-                .limit(5)
-                .map(click -> click.getClickedAt().toString())
+        List<String> lastClicks = clickEventRepository.findLast5Clicks(shortUrlId)
+                .stream()
+                .map(LocalDateTime::toString)
                 .collect(Collectors.toList());
 
+        long totalClicks = shortUrl.getVisitCount();
+
         return AnalyticsResponse.builder()
-                .totalClicks(clicks.size())
+                .totalClicks(totalClicks)
                 .browsers(browserStats)
                 .operatingSystems(osStats)
-                .lastClicks(last5Clicks)
+                .lastClicks(lastClicks)
                 .build();
     }
 }

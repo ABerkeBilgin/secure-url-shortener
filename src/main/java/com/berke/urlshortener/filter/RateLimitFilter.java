@@ -1,5 +1,6 @@
 package com.berke.urlshortener.filter;
 
+import com.berke.urlshortener.util.ClientIpUtil;
 import io.github.bucket4j.Bucket;
 import io.github.bucket4j.BucketConfiguration;
 import io.github.bucket4j.distributed.proxy.ProxyManager;
@@ -14,7 +15,7 @@ import java.time.Duration;
 import java.util.function.Supplier;
 
 @Component
-@Order(1) 
+@Order(1)
 public class RateLimitFilter implements Filter {
 
     private final ProxyManager<String> proxyManager;
@@ -32,15 +33,15 @@ public class RateLimitFilter implements Filter {
 
         String uri = request.getRequestURI();
         String method = request.getMethod();
-        String ip = request.getRemoteAddr();
-
+        String ip = ClientIpUtil.getClientIp(request);
         
-        if (uri.startsWith("/swagger-ui") || uri.startsWith("/v3/api-docs") || uri.startsWith("/h2-console")) {
+        if (uri.startsWith("/swagger-ui") || 
+            uri.startsWith("/v3/api-docs") || 
+            uri.startsWith("/h2-console")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        
         String key;
         long limit;
 
@@ -52,7 +53,6 @@ public class RateLimitFilter implements Filter {
             limit = 100; 
         }
 
-        
         Supplier<BucketConfiguration> configSupplier = () -> BucketConfiguration.builder()
                 .addLimit(limitBuilder -> limitBuilder
                         .capacity(limit)
@@ -60,10 +60,8 @@ public class RateLimitFilter implements Filter {
                 )
                 .build();
 
-        
         Bucket bucket = proxyManager.builder().build(key, configSupplier);
 
-       
         if (bucket.tryConsume(1)) {
             filterChain.doFilter(request, response);
         } else {
@@ -71,7 +69,7 @@ public class RateLimitFilter implements Filter {
             response.setContentType("application/json");
             response.setCharacterEncoding("UTF-8");
             response.getWriter().write(
-                    "{\"status\": 429, \"error\": \"Too Many Requests\", \"message\": \"Rate limit exceeded. Please wait. (Limit: " + limit + " req/min)\"}"
+                    "{\"status\": 429, \"error\": \"Too Many Requests\", \"message\": \"Rate limit exceeded. (Limit: " + limit + " req/min)\"}"
             );
         }
     }

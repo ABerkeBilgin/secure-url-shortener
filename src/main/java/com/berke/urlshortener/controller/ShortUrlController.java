@@ -5,6 +5,7 @@ import com.berke.urlshortener.dto.ShortUrlResponse;
 import com.berke.urlshortener.entity.ShortUrl;
 import com.berke.urlshortener.service.AnalyticsService;
 import com.berke.urlshortener.service.ShortUrlService;
+import com.berke.urlshortener.util.ClientIpUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -37,19 +38,17 @@ public class ShortUrlController {
     }
 
     @GetMapping("/{code}")
-    public ResponseEntity<Void> redirect(@PathVariable String code,HttpServletRequest request) {
-
+    public ResponseEntity<Void> redirect(
+            @PathVariable String code,
+            HttpServletRequest request
+    ) {
         ShortUrl shortUrl = service.getOriginalUrl(code);
 
-        String ipAddress = request.getHeader("X-Forwarded-For");
-        if (ipAddress == null || ipAddress.isEmpty()) {
-            ipAddress = request.getRemoteAddr();
-        }
-
+        String ipAddress = ClientIpUtil.getClientIp(request);
         String userAgent = request.getHeader("User-Agent");
 
         analyticsService.logClick(code, ipAddress, userAgent);
-
+        
         HttpHeaders headers = new HttpHeaders();
         headers.setLocation(URI.create(shortUrl.getOriginalUrl()));
         

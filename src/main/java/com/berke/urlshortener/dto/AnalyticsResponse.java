@@ -9,7 +9,7 @@ import java.util.List;
 @Builder
 public class AnalyticsResponse {
     private long totalClicks;
-    private Map<String, Long> browsers;         // Örn: Chrome -> 10
-    private Map<String, Long> operatingSystems; // Örn: Windows -> 5
-    private List<String> lastClicks;            // Son 5 tıklama zamanı
+    private Map<String, Long> browsers;         
+    private Map<String, Long> operatingSystems; 
+    private List<String> lastClicks;            
 }
