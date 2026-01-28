@@ -9,6 +9,7 @@ import com.berke.urlshortener.repository.ClickEventRepository;
 import com.berke.urlshortener.repository.ShortUrlRepository;
 import com.berke.urlshortener.util.UserAgentUtil;
 
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -27,6 +28,7 @@ public class AnalyticsService {
     private final ClickEventRepository clickEventRepository;
     private final ShortUrlRepository shortUrlRepository;
     private final UserAgentUtil userAgentUtil;
+    private final MeterRegistry meterRegistry;
 
     @Async
     public void logClick(String shortCode, String ipAddress, String userAgentHeader) {
@@ -50,6 +52,12 @@ public class AnalyticsService {
         clickEventRepository.save(clickEvent);
 
         shortUrlRepository.incrementVisitCount(shortUrl.getId());
+
+        meterRegistry.counter("url_shortener_clicks", 
+            "browser", browser, 
+            "os", os, 
+            "device", device
+        ).increment();
         
         log.info("Analytics saved & Counter incremented: Code={}", shortCode);
     }
