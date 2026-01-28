@@ -7,11 +7,7 @@ services:
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://shortener_db:5432/shortener_db
       - SPRING_DATA_REDIS_HOST=shortener_redis
-      
-      # 1. Tarayıcıdan (Swagger) gelen token'ı kabul etmek için:
       - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=http://localhost:8081/realms/shortener-realm
-      
-      # 2. Docker içinden Keycloak ile konuşabilmek için:
       - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI=http://keycloak:8080/realms/shortener-realm/protocol/openid-connect/certs
       
     networks:
