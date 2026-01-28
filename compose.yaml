@@ -1,4 +1,28 @@
 services:
+  backend-app:
+    build: .
+    container_name: url-shortener-app
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://shortener_db:5432/shortener_db
+      - SPRING_DATA_REDIS_HOST=shortener_redis
+      
+      # 1. Tarayıcıdan (Swagger) gelen token'ı kabul etmek için:
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=http://localhost:8081/realms/shortener-realm
+      
+      # 2. Docker içinden Keycloak ile konuşabilmek için:
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI=http://keycloak:8080/realms/shortener-realm/protocol/openid-connect/certs
+      
+    networks:
+      - shortener-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      keycloak:
+        condition: service_started
   postgres:
     image: 'postgres:16-alpine'
     container_name: shortener_db
@@ -61,6 +85,10 @@ services:
       KEYCLOAK_ADMIN_PASSWORD: admin 
     ports:
       - "8081:8080"
+    volumes:
+      - keycloak_data:/opt/keycloak/data
+    networks:
+      - shortener-network
 
 networks:
   shortener-network:
@@ -68,3 +96,4 @@ networks:
 
 volumes:
   postgres_data:
+  keycloak_data:
