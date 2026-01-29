@@ -8,10 +8,11 @@ import com.berke.urlshortener.exception.ShortUrlNotFoundException;
 import com.berke.urlshortener.repository.ClickEventRepository;
 import com.berke.urlshortener.repository.ShortUrlRepository;
 import com.berke.urlshortener.util.UserAgentUtil;
-
+import com.berke.urlshortener.util.UserContext; 
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -29,6 +30,7 @@ public class AnalyticsService {
     private final ShortUrlRepository shortUrlRepository;
     private final UserAgentUtil userAgentUtil;
     private final MeterRegistry meterRegistry;
+    private final UserContext userContext;
 
     @Async
     public void logClick(String shortCode, String ipAddress, String userAgentHeader) {
@@ -66,6 +68,16 @@ public class AnalyticsService {
         
         ShortUrl shortUrl = shortUrlRepository.findByShortCode(shortCode)
                 .orElseThrow(() -> new ShortUrlNotFoundException("Short URL not found: " + shortCode));
+
+        
+        String currentUserId = userContext.getCurrentUserId();
+        
+        
+        if (!shortUrl.getUserId().equals(currentUserId)) {
+            log.warn("Unauthorized access attempt! User: {}, URL: {}", currentUserId, shortCode);
+            throw new AccessDeniedException("You are not authorized to view these statistics.");
+        }
+       
 
         Long shortUrlId = shortUrl.getId();
 

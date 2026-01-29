@@ -26,6 +26,9 @@ public class ShortUrl implements Serializable{
     @Column(length = 10, unique = true)
     private String shortCode;
 
+    @Column(name = "user_id", nullable = false)
+    private String userId;
+
     @CreationTimestamp
     private LocalDateTime createdAt;
 

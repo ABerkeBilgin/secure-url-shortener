@@ -4,6 +4,8 @@ import com.berke.urlshortener.entity.ShortUrl;
 import com.berke.urlshortener.exception.ShortUrlNotFoundException;
 import com.berke.urlshortener.repository.ShortUrlRepository;
 import com.berke.urlshortener.strategy.ShorteningStrategy;
+import com.berke.urlshortener.util.UserContext;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -22,6 +24,7 @@ public class ShortUrlService {
     private final ShortUrlRepository repository;
     private final ShorteningStrategy shorteningStrategy;
     private final RedisTemplate<String, Object> redisTemplate;
+    private final UserContext userContext;
 
     private static final Duration CACHE_TTL = Duration.ofMinutes(10);
 
@@ -35,6 +38,8 @@ public class ShortUrlService {
     public ShortUrl createShortUrl(String originalUrl, LocalDateTime userExpirationDate) {
         log.info("Generating ShortUrl for: {}", originalUrl);
 
+        String currentUserId = userContext.getCurrentUserId();
+        
         LocalDateTime expiresAt = (userExpirationDate != null)
             ? userExpirationDate
             : LocalDateTime.now().plusDays(defaultExpirationDays);
@@ -49,6 +54,7 @@ public class ShortUrlService {
         // 1. [DB] Save initial
         ShortUrl shortUrl = ShortUrl.builder()
                 .originalUrl(originalUrl)
+                .userId(currentUserId)
                 .expiresAt(expiresAt) 
                 .build();
         ShortUrl savedUrl = repository.save(shortUrl);
