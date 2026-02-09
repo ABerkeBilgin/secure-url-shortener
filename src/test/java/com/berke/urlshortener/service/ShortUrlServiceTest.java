@@ -4,6 +4,7 @@ import com.berke.urlshortener.entity.ShortUrl;
 import com.berke.urlshortener.exception.ShortUrlNotFoundException;
 import com.berke.urlshortener.repository.ShortUrlRepository;
 import com.berke.urlshortener.strategy.ShorteningStrategy;
+import com.berke.urlshortener.util.UserContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -20,6 +21,8 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -37,6 +40,9 @@ class ShortUrlServiceTest {
     @Mock
     private ValueOperations<String, Object> valueOperations;
 
+    @Mock
+    private UserContext userContext;
+
     @InjectMocks
     private ShortUrlService service;
 
@@ -52,8 +58,13 @@ class ShortUrlServiceTest {
     @DisplayName("Create ShortUrl - Başarılı Senaryo")
     void createShortUrl_Success() {
         String originalUrl = "https://www.google.com";
-        ShortUrl initialUrl = ShortUrl.builder().id(1L).originalUrl(originalUrl).build();
-        ShortUrl finalUrl = ShortUrl.builder().id(1L).originalUrl(originalUrl).shortCode("abc").build();
+        String userId= "user-1";
+
+
+        ShortUrl initialUrl = ShortUrl.builder().id(1L).originalUrl(originalUrl).userId(userId).build();
+        ShortUrl finalUrl = ShortUrl.builder().id(1L).originalUrl(originalUrl).shortCode("abc").userId(userId).build();
+
+        when(userContext.getCurrentUserId()).thenReturn(userId);
 
         when(repository.save(any(ShortUrl.class))).thenReturn(initialUrl).thenReturn(finalUrl);
         when(shorteningStrategy.encode(1L)).thenReturn("abc");
